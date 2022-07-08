@@ -1,0 +1,46 @@
+<launch>
+    <arg name="debug" default="0"/>
+
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="z" default="0"/>
+    <arg name="roll" default="0.0"/>
+    <arg name="pitch" default="0.0"/>
+    <arg name="yaw" default="0.0"/>
+
+    <arg name="use_geodetic" default="false"/>
+    <arg name="latitude" default="0"/>
+    <arg name="longitude" default="0"/>
+    <arg name="depth" default="0"/>
+
+    <arg name="latitude_ref" default="0"/>
+    <arg name="longitude_ref" default="0"/>
+    <arg name="altitude_ref" default="0"/>
+
+    <arg name="mode" default="5"/>
+    <arg name="namespace" default="if750a"/>
+    <arg name="world_frame" default="world"/>
+
+    <!--rosparam file="$(find mur_description)/config/config.yaml" command="load" /-->
+
+    <group ns="$(arg namespace)">
+        <param name="robot_description"
+        command="$(find xacro)/xacro --inorder '$(find aero_detector)/robots/if750a_lidar.urdf.xacro' debug:=$(arg debug) namespace:=$(arg namespace)" />
+
+        <node name="spawn_model" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-urdf -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg roll) -P $(arg pitch) -Y $(arg yaw) -model $(arg namespace) -param /$(arg namespace)/robot_description"/>
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen">
+            <param name="robot_description" value="/$(arg namespace)/robot_description" />
+            <param name="publish_frequency" value="5" />
+        </node>
+
+        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+            <param name="use_gui" value="False"/>
+        </node>
+    </group>
+
+    <!-- Open RViz for visualization of sensor data and visualization markers -->
+    <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find aero_detector)/rviz/config.rviz"/>
+
+</launch>

@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<robot name="mur" xmlns:xacro="http://www.ros.org/wiki/xacro" >
-  <xacro:arg name="debug" default="0"/>
-  <xacro:arg name="namespace" default="if750a"/>
-  <!-- Include the UUV macro file -->
-  <xacro:include filename="$(find aero_detector)/urdf/if750a_lidar.urdf"/>
-  <!-- Create the mur -->
-  <xacro:if750a_lidar namespace="$(arg namespace)" debug="$(arg debug)"/>
-</robot>
+  <robot name="if750a_lidar" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:arg name="debug" default="0" />
+    <xacro:arg name="namespace" default="if750a" />
+    <!-- Include the if750a_lidar macro file -->
+    <xacro:include filename="$(find aero_detector)/urdf/if750a_lidar.xacro" />
+    <!-- Create the if750a_lidar -->
+    <xacro:if750a_lidar namespace="$(arg namespace)" debug="$(arg debug)" />
+  </robot>

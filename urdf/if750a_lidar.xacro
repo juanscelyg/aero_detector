@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="mass" value="1.5" />
+  <xacro:property name="bag_file" value="/tmp/bag_file.bag" />
+  <xacro:property name="visual_mesh_file" value="file://$(find aero_detector)/meshes/if750a.stl" />
+
+  <xacro:macro name="if750a_lidar" params="namespace debug">
+    <!-- Base Link definition  -->
+    <link name='${namespace}/base_link'>
+      <visual>
+        <origin xyz="0 0 0" rpy="1.570796 -0 1.570796" />
+        <geometry>
+          <mesh filename="${visual_mesh_file}" scale="0.001 0.001 0.001" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.47 0.47 0.11"/>
+        </geometry>
+      </collision>
+
+      <inertial>
+        <mass value="${mass}" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <inertia ixx="0.0347563" ixy="0" ixz="0" iyy="0.0458929" iyz="0" izz="0.0977" />
+      </inertial>
+    </link>
+
+    <gazebo>
+      <plugin filename="librotors_gazebo_bag_plugin.so" name="rosbag">
+        <robotNamespace>${namespace}</robotNamespace>
+        <bagFileName>${bag_file}</bagFileName>
+        <linkName>${namespace}/base_link</linkName>
+        <frameId>${namespace}/base_link</frameId>
+        <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+      </plugin>
+    </gazebo>
+
+    <xacro:include filename="$(find aero_detector)/urdf/if750a_lidar_sensors.xacro" />
+    <xacro:include filename="$(find aero_detector)/urdf/if750a_lidar_actuators.xacro" />
+  </xacro:macro>
+</robot>

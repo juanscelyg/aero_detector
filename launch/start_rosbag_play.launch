@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="path" default="/home/juanscelyg/data/" />
+    <arg name="bag_file" default="first_try" />
+    <include file="$(find aero_detector)/launch/parser_tf.launch"/>
+    <node pkg="rosbag" type="play" name="player" output="screen" args="--clock --pause $(arg path)$(arg bag_file).bag" />
+</launch>

@@ -1,0 +1,364 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- Mount a groundtruth sensor -->
+  <xacro:macro name="groundtruth_plugin" params="namespace">
+    <gazebo>
+      <plugin name='${namespace}_groundtruth_plugin' filename='libgazebo_groundtruth_plugin.so'>
+        <robotNamespace>${namespace}</robotNamespace>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+  <xacro:groundtruth_plugin namespace="${namespace}"/>
+
+  <!-- Magnetometer -->
+  <xacro:macro name="default_magnetometer" params="namespace parent_link *origin">
+    <gazebo>
+      <plugin name='${namespace}_magnetometer_plugin' filename='libgazebo_magnetometer_plugin.so'>
+        <robotNamespace>${namespace}</robotNamespace>
+        <pubRate>100</pubRate>
+        <noiseDensity>0.0004</noiseDensity>
+        <randomWalk>6.4e-06</randomWalk>
+        <biasCorrelationTime>600</biasCorrelationTime>
+        <magTopic>/mag</magTopic>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+  <xacro:default_magnetometer namespace="${namespace}" parent_link="${namespace}/base_link">
+    <origin xyz="0 0 0" rpy="$0 0 0" />
+  </xacro:default_magnetometer>
+
+  <!-- Pressure -->
+  <xacro:macro name="default_pressure" params="namespace parent_link *origin">
+    <gazebo>
+      <plugin name='${namespace}_barometer_plugin' filename='libgazebo_barometer_plugin.so'>
+        <robotNamespace>${namespace}</robotNamespace>
+        <pubRate>50</pubRate>
+        <baroTopic>/baro</baroTopic>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+  <xacro:default_pressure namespace="${namespace}" parent_link="${namespace}/base_link">
+    <origin xyz="0 0 0" rpy="$0 0 0" />
+  </xacro:default_pressure>
+
+  <!-- IMU  -->
+  <xacro:macro name="default_imu_enu" params="namespace parent_link *origin">
+    <!-- IMU link definition -->
+    <joint name="imu_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent link="${parent_link}" />
+      <child link="${namespace}/imu_link" />
+    </joint>
+    <link name='${namespace}/imu_link'>
+      <inertial>
+        <mass value="0.015" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001" />
+      </inertial>
+    </link>
+    <gazebo>
+      <plugin name='${namespace}_gazebo_imu_plugin' filename='libgazebo_imu_plugin.so'>
+        <robotNamespace>${namespace}</robotNamespace>
+        <linkName>${namespace}/imu_link</linkName>
+        <imuTopic>${namespace}/imu</imuTopic>
+        <gyroscopeNoiseDensity>0.0003394</gyroscopeNoiseDensity>
+        <gyroscopeRandomWalk>3.8785e-05</gyroscopeRandomWalk>
+        <gyroscopeBiasCorrelationTime>1000.0</gyroscopeBiasCorrelationTime>
+        <gyroscopeTurnOnBiasSigma>0.0087</gyroscopeTurnOnBiasSigma>
+        <accelerometerNoiseDensity>0.004</accelerometerNoiseDensity>
+        <accelerometerRandomWalk>0.006</accelerometerRandomWalk>
+        <accelerometerBiasCorrelationTime>300.0</accelerometerBiasCorrelationTime>
+        <accelerometerTurnOnBiasSigma>0.196</accelerometerTurnOnBiasSigma>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+  <xacro:default_imu_enu namespace="${namespace}" parent_link="${namespace}/base_link">
+    <origin xyz="-0.055 -0.08 0" rpy="0 0 0" />
+  </xacro:default_imu_enu>
+
+  <!-- MAVLINK interface-->
+  <xacro:macro name="default_mavlink_interface" params="namespace">
+    <gazebo>
+      <plugin name='${namespace}_mavlink_interface' filename='libgazebo_mavlink_interface.so'>
+        <robotNamespace />
+        <imuSubTopic>/imu</imuSubTopic>
+        <magSubTopic>/mag</magSubTopic>
+        <baroSubTopic>/baro</baroSubTopic>
+        <mavlink_addr>INADDR_ANY</mavlink_addr>
+        <mavlink_udp_port>14560</mavlink_udp_port>
+        <mavlink_tcp_port>4560</mavlink_tcp_port>
+        <serialEnabled>false</serialEnabled>
+        <serialDevice>/dev/ttyACM0</serialDevice>
+        <baudRate>921600</baudRate>
+        <qgc_addr>INADDR_ANY</qgc_addr>
+        <qgc_udp_port>14550</qgc_udp_port>
+        <hil_mode>false</hil_mode>
+        <hil_state_level>false</hil_state_level>
+        <enable_lockstep>true</enable_lockstep>
+        <use_tcp>true</use_tcp>
+        <send_vision_estimation>true</send_vision_estimation>
+        <send_odometry>false</send_odometry>
+        <motorSpeedCommandPubTopic>/gazebo/command/motor_speed</motorSpeedCommandPubTopic>
+        <control_channels>
+          <channel name='rotor1'>
+            <input_index>0</input_index>
+            <input_offset>0</input_offset>
+            <input_scaling>1000</input_scaling>
+            <zero_position_disarmed>0</zero_position_disarmed>
+            <zero_position_armed>100</zero_position_armed>
+            <joint_control_type>velocity</joint_control_type>
+          </channel>
+          <channel name='rotor2'>
+            <input_index>1</input_index>
+            <input_offset>0</input_offset>
+            <input_scaling>1000</input_scaling>
+            <zero_position_disarmed>0</zero_position_disarmed>
+            <zero_position_armed>100</zero_position_armed>
+            <joint_control_type>velocity</joint_control_type>
+          </channel>
+          <channel name='rotor3'>
+            <input_index>2</input_index>
+            <input_offset>0</input_offset>
+            <input_scaling>1000</input_scaling>
+            <zero_position_disarmed>0</zero_position_disarmed>
+            <zero_position_armed>100</zero_position_armed>
+            <joint_control_type>velocity</joint_control_type>
+          </channel>
+          <channel name='rotor4'>
+            <input_index>3</input_index>
+            <input_offset>0</input_offset>
+            <input_scaling>1000</input_scaling>
+            <zero_position_disarmed>0</zero_position_disarmed>
+            <zero_position_armed>100</zero_position_armed>
+            <joint_control_type>velocity</joint_control_type>
+          </channel>
+          <channel name='aux1'>
+            <input_index>4</input_index>
+            <input_offset>0</input_offset>
+            <input_scaling>1000</input_scaling>
+            <zero_position_disarmed>0</zero_position_disarmed>
+            <zero_position_armed>100</zero_position_armed>
+            <joint_control_type>velocity</joint_control_type>
+          </channel>
+        </control_channels>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+  <xacro:default_mavlink_interface namespace="${namespace}"></xacro:default_mavlink_interface>
+
+  <!-- Mount a camera # 1-->
+  <xacro:macro name="camera_macro" params="namespace parent_link camera_suffix frame_rate
+    horizontal_fov image_width image_height image_format min_distance
+    max_distance noise_mean noise_stddev  *origin">
+    <link name="${namespace}/camera_${camera_suffix}_link">
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.01 0.01 0.01"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="1e-5" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+      </inertial>
+    </link>
+    <joint name="${namespace}/camera_${camera_suffix}_joint" type="fixed">
+      <xacro:insert_block name="origin" />
+      <parent link="${parent_link}" />
+      <child link="${namespace}/camera_${camera_suffix}_link" />
+    </joint>
+    <link name="${namespace}/camera_${camera_suffix}_optical_link" />
+    <joint name="${namespace}/camera_${camera_suffix}_optical_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}" />
+      <parent link="${namespace}/camera_${camera_suffix}_link" />
+      <child link="${namespace}/camera_${camera_suffix}_optical_link" />
+    </joint>
+    <gazebo reference="${namespace}/camera_${camera_suffix}_link">
+      <sensor type="camera" name="${namespace}_camera_${camera_suffix}">
+        <update_rate>${frame_rate}</update_rate>
+        <camera name="head">
+          <horizontal_fov>${horizontal_fov}</horizontal_fov>
+          <image>
+            <width>${image_width}</width>
+            <height>${image_height}</height>
+            <format>${image_format}</format>
+          </image>
+          <clip>
+            <near>${min_distance}</near>
+            <far>${max_distance}</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>${noise_mean}</mean>
+            <stddev>${noise_stddev}</stddev>
+          </noise>
+        </camera>
+        <plugin name="${namespace}_camera_${camera_suffix}_controller" filename="libgazebo_ros_camera.so">
+          <robotNamespace>${namespace}</robotNamespace>
+          <alwaysOn>true</alwaysOn>
+          <updateRate>${frame_rate}</updateRate>
+          <cameraName>camera_${camera_suffix}</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>camera_${camera_suffix}_link</frameName>
+          <hackBaseline>0.07</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+  <xacro:camera_macro namespace="${namespace}" parent_link="${namespace}/base_link" camera_suffix="1" frame_rate="10" horizontal_fov="2.0" image_width="1280" image_height="720" image_format="R8G8B8" min_distance="0.02" max_distance="300" noise_mean="0.0" noise_stddev="0.007">
+    <origin xyz="0.11 0.03 0.10" rpy="0 0 0" />
+  </xacro:camera_macro>
+
+  <!-- Mount a GPS.-->
+  <xacro:macro name="gps_plugin_macro" params="namespace gps_suffix parent_link gps_topic ground_speed_topic
+      mass_gps_sensor horizontal_pos_std_dev vertical_pos_std_dev
+      horizontal_vel_std_dev vertical_vel_std_dev *inertia *origin">
+    <!-- GPS link -->
+    <link name="${namespace}/gps${gps_suffix}_link">
+      <inertial>
+        <xacro:insert_block name="inertia" />
+        <mass value="${mass_gps_sensor}" /> <!-- [kg] -->
+        <origin xyz="0 0 0" rpy="0 0 0" />
+      </inertial>
+    </link>
+    <!-- GPS joint -->
+    <joint name="${namespace}/gps${gps_suffix}_joint" type="revolute">
+      <xacro:insert_block name="origin" />
+      <parent link="${parent_link}" />
+      <child link="${namespace}/gps${gps_suffix}_link" />
+      <limit upper="0" lower="0" effort="0" velocity="0" />
+    </joint>
+    <gazebo reference="${namespace}/gps${gps_suffix}_link">
+      <sensor type="gps" name="${namespace}_gps${gps_suffix}">
+        <pose>0 0 0 0 0 0</pose>
+        <visualize>0</visualize>
+        <always_on>1</always_on>
+        <update_rate>5</update_rate>
+        <gps>
+          <position_sensing>
+            <horizontal>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>${horizontal_pos_std_dev}</stddev>
+                <bias_mean>0.0</bias_mean>
+                <bias_stddev>0.0</bias_stddev>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>${vertical_pos_std_dev}</stddev>
+                <bias_mean>0.0</bias_mean>
+                <bias_stddev>0.0</bias_stddev>
+              </noise>
+            </vertical>
+          </position_sensing>
+          <velocity_sensing>
+            <horizontal>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>${horizontal_vel_std_dev}</stddev>
+                <bias_mean>0.0</bias_mean>
+                <bias_stddev>0.0</bias_stddev>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>${vertical_vel_std_dev}</stddev>
+                <bias_mean>0.0</bias_mean>
+                <bias_stddev>0.0</bias_stddev>
+              </noise>
+            </vertical>
+          </velocity_sensing>
+        </gps>
+        <plugin filename="librotors_gazebo_gps_plugin.so" name="rotors_gazebo_gps${gps_suffix}_plugin">
+          <robotNamespace>${namespace}</robotNamespace> <!-- (string, required): ros namespace in which the messages are published -->
+          <linkName>${namespace}/gps${gps_suffix}_link</linkName> <!-- (string, required): name of the body which holds the GPS sensor -->
+          <gpsTopic>${gps_topic}</gpsTopic> <!-- (string): name of the sensor output topic and prefix of service names (defaults to 'gps') -->
+          <groundSpeedTopic>${ground_speed_topic}</groundSpeedTopic> <!-- (string): name of the ground speed output topic (defaults to 'ground_speed') -->
+          <horPosStdDev>${horizontal_pos_std_dev}</horPosStdDev> <!-- standard deviation for horizontal position noise [m] -->
+          <verPosStdDev>${vertical_pos_std_dev}</verPosStdDev> <!-- standard deviation for vertical position noise [m] -->
+          <horVelStdDev>${horizontal_vel_std_dev}</horVelStdDev> <!-- standard deviation for horizontal speed noise [m/s] -->
+          <verVelStdDev>${vertical_vel_std_dev}</verVelStdDev> <!-- standard deviation for vertical speed noise [m/s] -->
+        </plugin>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="default_gps" params="namespace parent_link gps_suffix">
+    <!-- Default GPS configuration -->
+    <xacro:gps_plugin_macro namespace="${namespace}" gps_suffix="${gps_suffix}" parent_link="${parent_link}" gps_topic="gps" ground_speed_topic="ground_speed" mass_gps_sensor="0.001" horizontal_pos_std_dev="0.0" vertical_pos_std_dev="0.0" horizontal_vel_std_dev="0.0" vertical_vel_std_dev="0.0">
+      <inertia ixx="0.00001" ixy="0.0" ixz="0.0" iyy="0.00001" iyz="0.0" izz="0.00001" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+    </xacro:gps_plugin_macro>
+  </xacro:macro>
+
+  <xacro:default_gps namespace="${namespace}" parent_link="${namespace}/base_link" gps_suffix="0" />
+
+  <!-- Laser -->
+  <xacro:macro name="laser_macro" params="namespace parent_link">
+    <joint name="${namespace}/rplidar_joint" type="revolute">
+      <origin xyz="0 0 0" rpy="0 0 -1.57" />
+      <child link="${namespace}/rplidar_link"/>
+      <parent link="${parent_link}"/>
+      <limit upper="0" lower="0" effort="0" velocity="0" />
+    </joint>
+
+    <link name="${namespace}/rplidar_link">
+      <collision>
+        <origin xyz="0 0 0.5" rpy="0 0 0" />
+        <geometry>
+          <box size="0.1 0.1 0.1" />
+        </geometry>
+      </collision>
+
+      <inertial>
+        <mass value="0.19" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <inertia ixx="4.15e-6" ixy="0" ixz="0" iyy="2.407e-6" iyz="0" izz="2.407e-6" />
+      </inertial>
+    </link>
+    <gazebo>
+      <sensor type="ray" name="${namespace}_laser">
+        <pose>0 0 0 0 0 0</pose>
+        <visualize>false</visualize>
+        <update_rate>5.5</update_rate>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>3000</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>6.28</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.05</min>
+            <max>30</max>
+            <resolution>0.05</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </ray>
+        <plugin name="${namespace}_gazebo_ros_head_rplidar_controller" filename="libgazebo_ros_laser.so">
+          <updateRate>15.0</updateRate>
+          <topicName>${namespace}/laser/scan</topicName>
+          <frameName>${namespace}/rplidar_link</frameName>
+        </plugin>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+  <xacro:laser_macro namespace="${namespace}" parent_link="${namespace}/base_link"></xacro:laser_macro>
+
+</robot>

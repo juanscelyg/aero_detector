@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+import numpy as np
+import rospy
+import tf2_ros
+import tf
+from tf.transformations import quaternion_from_euler, euler_from_quaternion
+from geometry_msgs.msg import TransformStamped
+from nav_msgs.msg import Odometry
+
+
+class tf_broadcaster():
+    def __init__(self):
+
+        # ROS infraestructure
+        self.pose_sub = rospy.Subscriber("/mavros/global_position/local", Odometry, self.callback)
+
+    def callback(self, msg):
+        br = tf2_ros.TransformBroadcaster()
+        t = TransformStamped()
+        t.header.frame_id = "world"
+        t.header.stamp = rospy.Time.now()
+        t.child_frame_id = "/if750a/base_link"
+        t.transform.translation.x = msg.pose.pose.position.x
+        t.transform.translation.y = msg.pose.pose.position.y
+        t.transform.translation.z = msg.pose.pose.position.z
+        t.transform.rotation.x = msg.pose.pose.orientation.x
+        t.transform.rotation.y = msg.pose.pose.orientation.y
+        t.transform.rotation.z = msg.pose.pose.orientation.z
+        t.transform.rotation.w = msg.pose.pose.orientation.w
+        br.sendTransform(t)
+
+
+if __name__ == '__main__':
+    rospy.init_node('tf_broadcaster')
+    try:
+        node = tf_broadcaster()
+        rate = rospy.Rate(5)
+        rospy.spin()
+    except rospy.ROSInterruptException:
+        print('caught exception')
+    print('exiting')

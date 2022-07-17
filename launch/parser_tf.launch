@@ -1,4 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <node pkg="tf2_ros" type="static_transform_publisher" name="rplink_broadcaster" args="0 0 0 0 0 0 /if750a/rplidar_link rplidar_link" />
+
+    <node pkg="aero_detector" type="tf_broadcaster.py" name="tf_broadcaster"/>
+
 </launch>

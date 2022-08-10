@@ -28,10 +28,12 @@ class aero_detector():
         # Processed data
         self.vector = [] 
         self.output = results()
+        self.init_model_flag = False
         # ROS infraestructure
         self.pose_sub = rospy.Subscriber("/mavros/global_position/local", Odometry, self.callback)
         self.laser_sub = rospy.Subscriber("/laser/scan", LaserScan, self.detect)
         self.graph_srv = rospy.Service('/get_model', SetBool, self.get_model)
+        self.init_srv = rospy.Service('/init_model', SetBool, self.init_model)
 
     def callback(self, msg):
         self.pose_drone.x=msg.pose.pose.position.x
@@ -39,7 +41,7 @@ class aero_detector():
         self.pose_drone.z=msg.pose.pose.position.z
 
     def detect(self, msg):
-        length_array = int((msg.angle_max/msg.angle_increment)/2)
+        length_array = int(((msg.angle_max-msg.angle_min)/msg.angle_increment))
         range_array = np.array(msg.ranges[0:length_array])
         count_objects=0
         flag=False
@@ -60,10 +62,11 @@ class aero_detector():
             x_point = self.pose_drone.x + x_value
             y_point = self.pose_drone.y - y_value
             z_point = self.pose_drone.z
-            self.vector.append([x_point, y_point, z_point])
-            self.get_angle(self.vector)
+            if self.init_model_flag:
+                self.vector.append([x_point, y_point, z_point])
+                self.get_angle(self.vector)
         else:
-            print("Detected solids(%s) are not enough." %count_objects)
+            rospy.loginfo("Detected solids(%s) are not enough." %count_objects)
 
 
     def get_angle(self, vector):
@@ -79,18 +82,26 @@ class aero_detector():
         print("Angulo Aspa: %s" %self.output.angle)
         print("Punto de corte con Z: %s" %self.output.center)
 
+    def init_model(self,req):
+        self.init_model_flag=req.data
+        if req.data:
+            txt_msg = "Recording data"
+        else:
+            txt_msg = "No Recording"
+        return SetBoolResponse(req.data, txt_msg)
+
     def get_model(self, req):
         aspa_len = 20.0
         base_fuste=[0,0]
         final_fuste=[0,float(self.output.center)]
         plt.plot(base_fuste,final_fuste)
-        x_aspas = [float(aspa_len*np.cos(np.deg2rad(-self.output.angle))), float(aspa_len*np.cos(np.deg2rad(-self.output.angle+120))), float(aspa_len*np.cos(np.deg2rad(-self.output.angle+240)))]
-        y_aspas = [float(aspa_len*np.sin(np.deg2rad(-self.output.angle))), float(aspa_len*np.sin(np.deg2rad(-self.output.angle+120))), float(aspa_len*np.sin(np.deg2rad(-self.output.angle+240)))]
+        x_aspas = [float(aspa_len*np.cos(np.deg2rad(-self.output.angle))), float(aspa_len*np.cos(np.deg2rad(-self.output.angle-120))), float(aspa_len*np.cos(np.deg2rad(-self.output.angle-240)))]
+        y_aspas = [float(aspa_len*np.sin(np.deg2rad(-self.output.angle))), float(aspa_len*np.sin(np.deg2rad(-self.output.angle-120))), float(aspa_len*np.sin(np.deg2rad(-self.output.angle-240)))]
         plt.plot([final_fuste[0],x_aspas[0]], [final_fuste[1],y_aspas[0]+final_fuste[1]])
         plt.plot([final_fuste[0],x_aspas[1]], [final_fuste[1],y_aspas[1]+final_fuste[1]])
         plt.plot([final_fuste[0],x_aspas[2]], [final_fuste[1],y_aspas[2]+final_fuste[1]])
-        plt.xlim([-35, 35])
-        plt.ylim([0, 70])
+        plt.xlim([-50, 50])
+        plt.ylim([0, 100])
         plt.show()
         return SetBoolResponse(req.data, 'Model was drawn.')
 

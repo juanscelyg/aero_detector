@@ -21,7 +21,8 @@
     <arg name="mode" default="5"/>
     <arg name="namespace" default="if750a"/>
     <arg name="world_frame" default="world"/>
-    <param name="use_sim_time" value="true" />
+    <arg name="use_sim_time" default="true"/>
+    <rosparam param="use_sim_time" subst_value="True">$(arg use_sim_time)</rosparam>
 
     <!--rosparam file="$(find aero_detector)/config/config.yaml" command="load" /-->
 

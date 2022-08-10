@@ -359,6 +359,7 @@
       </sensor>
     </gazebo>
   </xacro:macro>
+  
   <xacro:laser_macro namespace="${namespace}" parent_link="${namespace}/base_link"></xacro:laser_macro>
 
 </robot>

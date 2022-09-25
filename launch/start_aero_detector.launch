@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="right_side_blade" default="false"/>
+    <arg name="length_blade" default="75.0"/>
+    <rosparam param="right_side_blade" subst_value="True">$(arg right_side_blade)</rosparam>
+    <rosparam param="length_blade" subst_value="True">$(arg length_blade)</rosparam>
+
+    <node pkg="aero_detector" type="aero_detector.py" name="aero_detector" output="screen"></node>
+</launch>

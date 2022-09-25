@@ -5,7 +5,7 @@ from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from std_srvs.srv import SetBool, SetBoolResponse
 
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression # Module for regression procedure
 import matplotlib.pyplot as plt
 
 class pose_drone():
@@ -19,13 +19,14 @@ class results():
         self.angle=0.0
         self.center=0.0
         self.correlation=0.0
-        self.offset_fuste = 3.0
+        self.offset_fuste = 3.0 # Correction of obtained model
 
 class aero_detector():
     def __init__(self):
         # drone pose
         self.pose_drone = pose_drone() 
         # Processed data
+        self.sense = rospy.get_param("right_side_blade")
         self.vector = [] 
         self.output = results()
         self.init_model_flag = False
@@ -34,11 +35,17 @@ class aero_detector():
         self.laser_sub = rospy.Subscriber("/laser/scan", LaserScan, self.detect)
         self.graph_srv = rospy.Service('/get_model', SetBool, self.get_model)
         self.init_srv = rospy.Service('/init_model', SetBool, self.init_model)
+        rospy.loginfo("Blade location in right side := %s" %self.sense)
 
     def callback(self, msg):
         self.pose_drone.x=msg.pose.pose.position.x
         self.pose_drone.y=msg.pose.pose.position.y
         self.pose_drone.z=msg.pose.pose.position.z
+
+    def print_regression(self):
+        print("Correlacion r^2: %s" %self.output.correlation)
+        print("Angulo Aspa: %s" %self.output.angle)
+        print("Punto de corte con Z: %s" %self.output.center)
 
     def detect(self, msg):
         length_array = int(((msg.angle_max-msg.angle_min)/msg.angle_increment))
@@ -55,16 +62,18 @@ class aero_detector():
                 limits[count_objects-1,1]=i
                 flag=False 
         #print("Count Objects: %s" %count_objects)
-        if count_objects==3:
-            min_index = int(np.where(msg.ranges == np.amin(msg.ranges[int(limits[0,0]):int(limits[0,1])]))[0])
+        if count_objects==2 and self.init_model_flag:
+            init_index = 1
+            if self.sense:
+                init_index = 0
+            min_index = int(np.where(msg.ranges == np.amin(msg.ranges[int(limits[init_index,0]):int(limits[init_index,1])]))[0])
             x_value = msg.ranges[min_index]*np.sin(min_index*msg.angle_increment)
             y_value = msg.ranges[min_index]*np.cos(min_index*msg.angle_increment)
             x_point = self.pose_drone.x + x_value
             y_point = self.pose_drone.y - y_value
             z_point = self.pose_drone.z
-            if self.init_model_flag:
-                self.vector.append([x_point, y_point, z_point])
-                self.get_angle(self.vector)
+            self.vector.append([x_point, y_point, z_point])
+            self.get_angle(self.vector)
         else:
             rospy.loginfo("Detected solids(%s) are not enough." %count_objects)
 
@@ -78,9 +87,7 @@ class aero_detector():
         self.output.correlation = model.score(x_vector, y_vector)
         self.output.angle = np.rad2deg(np.arctan(model.coef_))
         self.output.center = model.intercept_ + self.output.offset_fuste
-        print("Correlacion r^2: %s" %self.output.correlation)
-        print("Angulo Aspa: %s" %self.output.angle)
-        print("Punto de corte con Z: %s" %self.output.center)
+        self.print_regression()
 
     def init_model(self,req):
         self.init_model_flag=req.data
@@ -91,12 +98,15 @@ class aero_detector():
         return SetBoolResponse(req.data, txt_msg)
 
     def get_model(self, req):
-        aspa_len = 20.0
+        aspa_len = rospy.get_param("length_blade")
         base_fuste=[0,0]
         final_fuste=[0,float(self.output.center)]
+        if self.sense:
+            self.output.angle = self.output.angle + 90.0
         plt.plot(base_fuste,final_fuste)
-        x_aspas = [float(aspa_len*np.cos(np.deg2rad(-self.output.angle))), float(aspa_len*np.cos(np.deg2rad(-self.output.angle-120))), float(aspa_len*np.cos(np.deg2rad(-self.output.angle-240)))]
-        y_aspas = [float(aspa_len*np.sin(np.deg2rad(-self.output.angle))), float(aspa_len*np.sin(np.deg2rad(-self.output.angle-120))), float(aspa_len*np.sin(np.deg2rad(-self.output.angle-240)))]
+        x_aspas = [float(aspa_len*np.cos(np.deg2rad(self.output.angle))), float(aspa_len*np.cos(np.deg2rad(self.output.angle+120))), float(aspa_len*np.cos(np.deg2rad(self.output.angle+240)))]
+        y_aspas = [float(aspa_len*np.sin(np.deg2rad(self.output.angle))), float(aspa_len*np.sin(np.deg2rad(self.output.angle+120))), float(aspa_len*np.sin(np.deg2rad(self.output.angle+240)))]
+        self.print_regression()
         plt.plot([final_fuste[0],x_aspas[0]], [final_fuste[1],y_aspas[0]+final_fuste[1]])
         plt.plot([final_fuste[0],x_aspas[1]], [final_fuste[1],y_aspas[1]+final_fuste[1]])
         plt.plot([final_fuste[0],x_aspas[2]], [final_fuste[1],y_aspas[2]+final_fuste[1]])

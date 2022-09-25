@@ -24,6 +24,7 @@
     <arg name="use_sim_time" default="true"/>
     <rosparam param="use_sim_time" subst_value="True">$(arg use_sim_time)</rosparam>
 
+
     <!--rosparam file="$(find aero_detector)/config/config.yaml" command="load" /-->
 
     <group ns="$(arg namespace)">
